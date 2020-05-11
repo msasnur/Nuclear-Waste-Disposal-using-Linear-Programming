@@ -1,0 +1,84 @@
+---
+title: "Nuclear Waste Disposal at PAWV Power and Light"
+author: "Srushti Padade"
+date: "11/24/2019"
+output:
+  html_document: default
+  word_document: default
+---
+
+Problem statement:
+
+PAWV Power and Light has contracted with a waste disposal firm to have nuclear waste from its nuclear power plants in Pennsylvania disposed of at a government-operated nuclear waste disposal site in Nevada. The waste must be shipped in reinforced container trucks across the country, and all travel must be confined to the interstate highway system. The government insists that the waste transport must be completed within 42 hours and that the trucks travel through the least populated areas possible. The following network shows the various interstate segments the trucks might use from Pittsburgh to the Nevada waste site and the travel time (in hours) estimated for each road segment. The approximate population (in millions) for the metropolitan areas the trucks might travel through. Determine the optimal route the trucks should take from Pittsburgh to the Nevada site to complete the trip within 42 hours and expose the trucks to the least number of people possible.
+
+```{r}
+library(lpSolveAPI)
+```
+
+#Read the lp file
+```{r}
+lprec <- read.lp("NuclearWaste_Disposal.lp")
+```
+
+#Solve the LP
+```{r}
+solve(lprec)
+```
+#Get Min Value of OF
+```{r}
+get.objective(lprec)
+```
+```{r}
+CityPath <- c("Pittsburgh - Columbus", "Pittsburgh - Cleveland", "Pittsburgh - Akron", "Pittsburgh - Charleston", "Columbus - Akron", "Columbus - Cincinnati", "Columbus - Indianapolis", "Cleveland - Akron", "Cleveland - Toledo", "Akron - Toledo", "Charleston - Lexington", "Charleston - Knoxville", "Toledo - Chicago", "Toledo - Indianapolis", "Cincinnati - Lexington", "Cincinnati - Indianapolis", "Cincinnati - Louisville", "Lexington - Knoxville", "Lexington - Louisville", "Knoxville - Nashville", "Chicago - Indianapolis", "Chicago - Springfield", "Chicago - Davenport/Moline/Rock Island", "Indianapolis - Louisville", "Indianapolis - Springfield", "Indianapolis - St. Louis", "Louisville - Nashville", "Louisville - Evansville", "Nashville - Memphis", "Evansville  - St. Louis", "Springfield - Davenport/Moline/Rock Island", "Springfield - St. Louis", "Davenport/Moline/Rock Island - Des Monies", "St. Louis - Memphis", "St. Louis - Kansas City", "St. Louis - Tulsa", "Memphis - Little Rock", "Des Monies - Kansas City", "Des Moines - Omaha", "Kansas City - Little Rock", "Kansas City Omaha", "Kansas City - Topeka", "Tulsa - Little Rock", "Tulsa - Wichita", "Tulsa - Oklahoma City", "Little Rock - Oklahoma City", "Omaha - Cheyenne", "Omaha - Denver", "Wichita - Oklahoma City", "Oklahoma City - Amarillo", "Amarillo - Albuquerque", "Cheyenne - Denver", "Cheyenne - Salt Lake City", "Denver - Albuquerque", "Denver - Salt Lake City", "Denver - Las Vegas", "Albuquerque - Las Vegas", "Salt Lake City - Nevada Site", "Las Vegas - Neveda Site")
+```
+
+```{r}
+Cities <- c("Time", "Pittsburgh", "Columbus", "Cleveland", "Akron", "Charleston", "Toledo", "Cincinnati", "Lexington", "Knoxville", "Chicago", "Indianapolis", "Louisville", "Nashvilla", "Evansville", "Springfield", "Davenport/Moline/Rock Island", "St. Louis", "Memphis", "Des Moines", "Kansas City", "Tulsa", "Little Rock", "Omaha", "Topeka", "Wichita", "Oklahoma City", "Amarillo", "Cheyenne", "Denver", "Albuquerque", "Salt Lake City", "Las Vegas", "Nevada Site")
+```
+
+#Get Variable value
+```{r}
+Variable_Value <- as.data.frame(get.variables(lprec))
+```
+
+```{r}
+Followed_Path <- as.data.frame(cbind(City = CityPath,Path = Variable_Value[1:59,]))
+
+Followed_Path
+```
+
+#The Minimum path : Solution
+```{r}
+Minimum_Path <- Followed_Path[Followed_Path$Path == 1,]
+
+Minimum_Path
+```
+
+```{r}
+Total_Time <- get.constraints(lprec)[1]
+Total_Time
+```
+
+#Get Constraint Value
+```{r}
+get.constraints(lprec)
+```
+#m + n = shadow + reduce, no. of constraints + decision Variables ; 34 + 59
+
+#To compute Shadow price : 
+
+```{r}
+get.sensitivity.rhs(lprec)$duals[1:34]
+```
+#To compute Reduced Cost
+```{r}
+get.sensitivity.rhs(lprec)$duals[35:93]
+```
+#Range of shadow price
+```{r}
+cbind(Cities, Shadow_Price=get.sensitivity.rhs(lprec)$duals[1:34], Lower_bound=get.sensitivity.rhs(lprec)$dualsfrom[1:34], Upper_bound=get.sensitivity.rhs(lprec)$dualstill[1:34])
+```
+##Range of Reduced Cost
+```{r}
+cbind(CityPath, Reduce_Cost=get.sensitivity.rhs(lprec)$duals[35:93], Lower_bound=get.sensitivity.rhs(lprec)$dualsfrom[35:93], Upper_bound=get.sensitivity.rhs(lprec)$dualstill[35:93])
+```
